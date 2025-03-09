@@ -1,4 +1,4 @@
-﻿using libmsstyle;
+using libmsstyle;
 using msstyleEditor.Dialogs;
 using msstyleEditor.Properties;
 using msstyleEditor.PropView;
@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -87,6 +88,7 @@ namespace msstyleEditor
 
             m_searchDialog.StartPosition = FormStartPosition.CenterParent;
             m_searchDialog.OnSearch += this.OnSearchNextItem;
+            m_searchDialog.OnReplace += this.OnReplaceItem;
 
             if (args.Length > 0)
             {
@@ -260,9 +262,13 @@ namespace msstyleEditor
             {
                 imagePropToShow = imgProps[0];
             }
-            else if (imagePropToShow == null && cls.Parts[0] != part)
+            else
             {
-                imagePropToShow = cls.Parts[0].GetImageProperties().FirstOrDefault();
+                StylePart commonPart;
+                if(cls.Parts.TryGetValue(0, out commonPart))
+                {
+                    imagePropToShow = commonPart.GetImageProperties().FirstOrDefault();
+                }
             }
 
             // reset image view
@@ -652,9 +658,28 @@ namespace msstyleEditor
 
                 try
                 {
-                    using (var fs = File.Create(sfd.FileName))
+                    if(m_selectedImage.Type == StyleResourceType.Image)
+                    {
+                        // The IMAGE resources are non-standard PNGs images. The color channels
+                        // are premultiplied by alpha already even though the PNG spec dictates
+                        // straight alpha. We have to correct this, otherwise image viewers will
+                        // be confused and results will be off. PREMUL -> STRAIGHT.
+                        using (var ms = new MemoryStream(m_selectedImage.Data))
+                        {
+                            Bitmap bmp;
+                            libmsstyle.ImageConverter.PremulToStraightAlpha(ms, out bmp);
+                            bmp.Save(sfd.FileName);
+                        }
+                    }
+                    else
+                    {
+                        // The images in the ATLAS resource are standard, straight-alpha, PNG images.
+                        // This makes sense insofar, as those are used in the DWM classes which seem
+                        // to be a bit more special. KEEP AS-IS.
+                        using (var fs = File.Create(sfd.FileName + "asis.png"))
                     {
                         fs.Write(m_selectedImage.Data, 0, m_selectedImage.Data.Length);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -691,7 +716,29 @@ namespace msstyleEditor
                     return;
                 }
 
-                m_style.QueueResourceUpdate(m_selectedImage.ResourceId, m_selectedImage.Type, ofd.FileName);
+
+                var fname = Path.GetRandomFileName() + Path.GetExtension(ofd.FileName);
+                var tempFolder = Path.Combine(Path.GetTempPath(), "msstyleEditor");
+                Directory.CreateDirectory(tempFolder);
+                var tempFile = Path.Combine(tempFolder, fname);
+                if (m_selectedImage.Type == StyleResourceType.Image)
+                {
+                    // IMAGE resources must be saved with premultiplied alpha channel.
+                    using (var ifs = File.OpenRead(ofd.FileName))
+                    using (var ofs = File.Create(tempFile))
+                    {
+                        Bitmap bmp;
+                        libmsstyle.ImageConverter.PremultiplyAlpha(ifs, out bmp);
+                        bmp.Save(ofs, ImageFormat.Png);
+                    }
+                }
+                else
+                {
+                    // STREAM resources must be saved with straight alpha channel.
+                    File.Copy(ofd.FileName, tempFile, true);
+                }
+
+                m_style.QueueResourceUpdate(m_selectedImage.ResourceId, m_selectedImage.Type, tempFile);
                 // TODO: update image view?
             }
         }
@@ -768,9 +815,6 @@ namespace msstyleEditor
             if (m_style == null)
                 return;
 
-            if (String.IsNullOrEmpty(search))
-                return;
-
             object searchObj = null;
             if (mode == SearchDialog.SearchMode.Property)
             {
@@ -785,7 +829,97 @@ namespace msstyleEditor
                 }
             }
 
-            m_classView.FindNextNode(mode, type, search, searchObj);
+            // includeSelectedNode = false, because we would get stuck.
+            var node = m_classView.FindNextNode(false, (_node) =>
+            {
+                switch (mode)
+                {
+                    case SearchDialog.SearchMode.Name:
+                        return _node.Text.ToUpper().Contains(search.ToUpper());
+                    case SearchDialog.SearchMode.Property:
+                        {
+                            StylePart part = _node.Tag as StylePart;
+                            if (part != null)
+                            {
+                                return part.States.Any((kvp) =>
+                                {
+                                    return kvp.Value.Properties.Any((p) =>
+                                    {
+                                        return p.Header.typeID == (int)type &&
+                                            p.GetValue().Equals(searchObj);
+                                    });
+                                });
+                            }
+                        }
+                        return false;
+                    default: return false;
+                }
+            });
+
+            if(node == null)
+            {
+                MessageBox.Show($"No further match for \"{search}\" !\nSearch will begin from top again.", ""
+                    , MessageBoxButtons.OK
+                    , MessageBoxIcon.Information);
+            }
+        }
+
+        private void OnReplaceItem(SearchDialog.ReplaceMode mode, IDENTIFIER type, string search, string replacement)
+        {
+            if (m_style == null)
+                return;
+
+            var searchObj = MakeObjectFromSearchString(type, search);
+            if (searchObj == null)
+            {
+                string typeString = VisualStyleProperties.PROPERTY_INFO_MAP[(int)type].Name;
+                MessageBox.Show($"\"{search}\" doesn't seem to be a valid {typeString} property!", ""
+                    , MessageBoxButtons.OK
+                    , MessageBoxIcon.Warning);
+                return;
+            }
+
+            var replacementObj = MakeObjectFromSearchString(type, replacement);
+            if (replacementObj == null)
+            {
+                string typeString = VisualStyleProperties.PROPERTY_INFO_MAP[(int)type].Name;
+                MessageBox.Show($"\"{replacementObj}\" doesn't seem to be a valid {typeString} property!", ""
+                    , MessageBoxButtons.OK
+                    , MessageBoxIcon.Warning);
+                return;
+            }
+
+            // includeSelectedNode = true, since we replace the matches we can't get stuck.
+            // Also, we need to exhaust all matches of the nodes.
+            var node = m_classView.FindNextNode(true, (_node) =>
+            {
+                StylePart part = _node.Tag as StylePart;
+                if (part != null)
+                {
+                    return part.States.Any((kvp) =>
+                    {
+                        return kvp.Value.Properties.Any((p) =>
+                        {
+                            bool isMatch = p.Header.typeID == (int)type &&
+                                           p.GetValue().Equals(searchObj);
+                            if (isMatch)
+                            {
+                                p.SetValue(replacementObj);
+                            }
+
+                            return isMatch;
+                        });
+                    });
+                }
+                else return false;
+            });
+
+            if (node == null)
+            {
+                MessageBox.Show($"No further match for \"{search}\" !\nSearch & replace will begin from top again.", ""
+                    , MessageBoxButtons.OK
+                    , MessageBoxIcon.Information);
+            }
         }
 
         private object MakeObjectFromSearchString(IDENTIFIER type, string search)
@@ -837,6 +971,7 @@ namespace msstyleEditor
                 return null;
             }
         }
+
         private void OnDocumentationClicked(object sender, EventArgs e)
         {
             try
