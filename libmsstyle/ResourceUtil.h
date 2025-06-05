@@ -2,6 +2,7 @@
 
 #include "StringTable.h"
 #include <string>
+#include <stdexcept>
 
 namespace libmsstyle
 {

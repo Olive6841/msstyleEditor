@@ -2,6 +2,7 @@
 
 #include "VisualStyleDefinitions.h"
 #include <stdint.h>
+#include <string>
 
 namespace libmsstyle
 {
