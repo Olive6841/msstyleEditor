@@ -278,8 +278,7 @@ namespace libmsstyle
                     { 3, "UnknownState(3)" },
                     { 4, "UnknownState(4)" },
                     { 5, "UnknownState(5)" },
-                    { 6, "UnknownState(6)"
-                    },
+                    { 6, "UnknownState(6)" },
                     { 7, "UnknownState(7)" },
                     { 8, "UnknownState(8)" },
                     { 9, "UnknownState(9)" },
@@ -327,18 +326,32 @@ namespace libmsstyle
                     { 4, "LauncherText" },
                     { 5, "LauncherIcon" },
                     { 6, "Timer" },
-                    { 7, "Flyout" }
+                    { 7, "Flyout" },
+                    { 8, "FullscreenFlyout" }
                 })
             },
             { 58, new AnimationStates("AppLaunch", new Dictionary<int, string>
                 {
                     { 1, "Activated" },
-                    { 2, "Remaining" }
+                    { 2, "Remaining" },
+                    { 3, "Launcher" },
+                    { 4, "AppScreen" },
+                    { 5, "AppScreenPlace" },
+                    { 6, "Timer" },
+                    { 7, "AppScreenDelayed" },
+                    { 8, "Gutter" },
+                    { 9, "BackgroundApp" },
                 })
             },
             { 59, new AnimationStates("AppSwitch", new Dictionary<int, string>
                 {
-                    { 1, "PageOut" }
+                    { 1, "PageOut" },
+                    { 2, "PageIn" },
+                    { 3, "PageInSolo" },
+                    { 4, "Static" },
+                    { 5, "StaticSolo" },
+                    { 6, "Gutter" },
+                    { 7, "GutterSolo" },
                 })
             },
             { 60, new AnimationStates("TapDown3D", new Dictionary<int, string>()) },
@@ -356,7 +369,32 @@ namespace libmsstyle
             { 62, new AnimationStates("Thumbnail", new Dictionary<int, string>
                 {
                     { 1, "Animate" },
-                    { 2, "AnimateBounce" }
+                    { 2, "AnimateBounce" },
+                    { 3, "AnimateBounceDelayed" },
+                    { 4, "AnimateDelayed" },
+                    { 5, "AnimateFast" },
+                    { 6, "AnimateSlow" },
+                    { 7, "PlaceModeIdleAnimate" },
+                    { 8, "PlaceModeInvoke" },
+                    { 9, "SwitchItemDeletedFade" },
+                    { 10, "SwitchItemDeletedSlide" },
+                    { 11, "AUVInvokeFadeIn" },
+                    { 12, "AUVInvokeMinimizedWindowFadeIn" },
+                    { 13, "AUVInvokeTextFadeIn" },
+                    { 14, "AUVInvokeVisibleWindows" },
+                    { 15, "AUVInvokeVisibleWindowsGridElement" },
+                    { 16, "AUVDismissWindowFadeOut" },
+                    { 17, "AUVDismissFadeOut" },
+                    { 18, "AUVDismissVisibleWindows" },
+                    { 19, "AUVAddDesktopSingleToMultiOldDesktop" },
+                    { 20, "AUVAddDesktopSingleToMultiNewDesktop" },
+                    { 21, "AUVAddDesktopMultiToMultiOldDesktops" },
+                    { 22, "AUVAddDesktopMultiToMultiNewDesktop" },
+                    { 23, "AUVRemoveDesktopNotRemoved" },
+                    { 24, "AUVRemoveDesktopScrollElement" },
+                    { 25, "AUVRootInvokeFadeIn" },
+                    { 26, "AUVRootDismissFadeOut" },
+                    { 27, "VirtualDesktopGestureCommit" },
                 })
             },
             { 63, new AnimationStates("Resize", new Dictionary<int, string>
@@ -403,6 +441,16 @@ namespace libmsstyle
                     { 7, "AppOutMaximize" },
                     { 8, "ReplaceFromTilt" },
                     { 9, "ReplaceNoTilt" }
+                })
+            },
+            { 68, new AnimationStates("AppArrangementDelayed", new Dictionary<int, string>
+                {
+                    { 1, "UnknownState(1)" },
+                    { 2, "UnknownState(2)" },
+                    { 3, "UnknownState(3)" },
+                    { 4, "UnknownState(4)" },
+                    { 5, "UnknownState(5)" },
+                    { 6, "UnknownState(6)" }
                 })
             },
             { 69, new AnimationStates("AppLaunchSwitch", new Dictionary<int, string>
@@ -560,6 +608,17 @@ namespace libmsstyle
                     { 2, "UnknownState(2)" },
                     { 3, "UnknownState(3)" },
                     { 4, "UnknownState(4)" }
+                })
+            },
+            { 92, new AnimationStates("PPIWorkAreaResize", new Dictionary<int, string>
+                {
+                    { 1, "DesktopBefore" },
+                })
+            },
+            { 93, new AnimationStates("TabSwitch", new Dictionary<int, string>
+                {
+                    { 1, "Incoming" },
+                    { 2, "Outgoing" },
                 })
             },
             { 94, new AnimationStates("WindowMinimizeWin11", new Dictionary<int, string>
