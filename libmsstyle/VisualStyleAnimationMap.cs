@@ -23,6 +23,9 @@ namespace libmsstyle
             {52 , "LogInPathX"},
             {53 , "LogInPathY"},
             {54 , "LogInPathZ"},
+            {55 , "AppLaunchPathX"},
+            {56 , "AppLaunchPathY"},
+            {57 , "AppLaunchPathZ"},  
             {58 , "CustomFlipping"},
             {59 , "AppLaunchScale"},
             {60 , "AppLaunchDrift"},
@@ -31,6 +34,10 @@ namespace libmsstyle
             {63 , "AppLaunchRotateBounce"},
             {64 , "AppLaunchRotateBounceDelayed"},
             {65 , "DesktopWithPop"},
+            {66 , "LauncherFullscreenEntrance"},
+            {67 , "LauncherFullscreenDismiss"},
+            {68 , "AppArrangementIncoming"},
+            {69 , "AppArrangementOutgoing"},
         };
 
 
